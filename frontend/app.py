@@ -1,14 +1,18 @@
 import streamlit as st
 import requests
 import os
+from io import BytesIO
 
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL")
+if not API_URL:
+    raise RuntimeError("❌ API_URL environment variable is not set.")
+
 
 st.set_page_config("🧠 RAG Chatbot")
 st.title("📄 RAG Chatbot")
 st.caption("💬 Talk to Mistral with optional document retrieval.")
 
-# === Session state initialization ===
+# === Session State Init ===
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "uploaded_files" not in st.session_state:
@@ -16,6 +20,7 @@ if "uploaded_files" not in st.session_state:
 
 # === Sidebar Controls ===
 st.sidebar.header("⚙️ Controls")
+
 if st.sidebar.button("🧹 Clear Chat"):
     st.session_state.chat_history = []
     st.rerun()
@@ -41,7 +46,7 @@ for entry in st.session_state.chat_history:
             for chunk in entry.get("chunks", []):
                 st.markdown(f"> {chunk}")
 
-# === Chat Input Box ===
+# === Chat Form ===
 with st.form("chat_form", clear_on_submit=True):
     user_input = st.text_input("Ask something...")
     submitted = st.form_submit_button("Send")
@@ -62,7 +67,7 @@ if submitted and user_input:
     except Exception as e:
         st.error(f"⚠️ Error connecting to backend: {e}")
 
-# === Document Upload Section ===
+# === Upload Section ===
 st.divider()
 st.subheader("📎 Upload Documents")
 st.caption("Upload your PDF or TXT files to activate RAG-based responses.")
@@ -75,20 +80,22 @@ uploaded_files = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# Auto-process uploaded files if not already stored
 new_files = []
 if uploaded_files:
     for f in uploaded_files:
         if f.name not in [x.name for x in st.session_state.uploaded_files]:
             new_files.append(f)
 
-    if new_files:
-        with st.spinner("🔄 Uploading and processing..."):
-            try:
-                files = [("files", (f.name, f, f.type)) for f in new_files]
+if new_files:
+    with st.spinner("🔄 Uploading and processing..."):
+        try:
+            for f in new_files:
+                file_bytes = f.read()
+                files = {"file": (f.name, BytesIO(file_bytes), f.type)}
                 res = requests.post(f"{API_URL}/upload", files=files)
                 res.raise_for_status()
-                st.session_state.uploaded_files.extend(new_files)
-                st.success("✅ Files uploaded and processed.")
-            except Exception as e:
-                st.error(f"⚠️ Upload failed: {e}")
+
+            st.session_state.uploaded_files.extend(new_files)
+            st.success("✅ Files uploaded and processed.")
+        except Exception as e:
+            st.error(f"⚠️ Upload failed: {e}")
