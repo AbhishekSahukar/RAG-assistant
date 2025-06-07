@@ -1,5 +1,8 @@
 import streamlit as st
 import requests
+import os
+
+API_URL = os.getenv("API_URL", "")
 
 st.set_page_config("🧠 RAG Chatbot")
 st.title("📄 RAG Chatbot")
@@ -19,7 +22,7 @@ if st.sidebar.button("🧹 Clear Chat"):
 
 if st.sidebar.button("🗑️ Clear Documents"):
     try:
-        res = requests.post("http://localhost:8000/status/clear-documents")
+        res = requests.post(f"{API_URL}/status/clear-documents")
         if res.status_code == 200:
             st.session_state.uploaded_files = []
             st.success("✅ Documents cleared.")
@@ -45,7 +48,7 @@ with st.form("chat_form", clear_on_submit=True):
 
 if submitted and user_input:
     try:
-        res = requests.post("http://localhost:8000/chat", json={"message": user_input})
+        res = requests.post(f"{API_URL}/chat", json={"message": user_input})
         res.raise_for_status()
         data = res.json()
 
@@ -83,7 +86,7 @@ if uploaded_files:
         with st.spinner("🔄 Uploading and processing..."):
             try:
                 files = [("files", (f.name, f, f.type)) for f in new_files]
-                res = requests.post("http://localhost:8000/upload", files=files)
+                res = requests.post(f"{API_URL}/upload", files=files)
                 res.raise_for_status()
                 st.session_state.uploaded_files.extend(new_files)
                 st.success("✅ Files uploaded and processed.")
