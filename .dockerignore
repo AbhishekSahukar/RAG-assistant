@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 vector_store/
 .env
+
+#Tests
+test_docs
+test_api.py

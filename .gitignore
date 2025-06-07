@@ -32,3 +32,7 @@ Thumbs.db
 # Docker
 *.pid
 *.sock
+
+#Tests
+test_docs
+test_api.py

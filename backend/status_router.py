@@ -21,6 +21,7 @@ def clear_documents():
     hashes.clear()
     index = faiss.IndexFlatL2(384)  # Assuming embedding dim is 384
     save_vector_store()
+    return {"status": "success", "message": "Documents cleared."}
     
     # Optional: clean disk files too
     try:

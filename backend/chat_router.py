@@ -3,6 +3,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.llm import call_llm
 from backend.retriever import retrieve_chunks
+from backend.memory import add_message, get
+
 
 class ChatRequest(BaseModel):
     message: str
