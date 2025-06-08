@@ -1,11 +1,11 @@
-# upload_router.py (Final with fixes)
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import List
 import hashlib
+import fitz  # PyMuPDF
+
 from backend.document_store import chunks, hashes, index, save_vector_store
 from backend.retriever import create_faiss_index
 from backend.llm import clean_text_chunks
-import fitz  # PyMuPDF
 
 upload_router = APIRouter()
 
@@ -39,8 +39,12 @@ async def upload(files: List[UploadFile] = File(...)):
             create_faiss_index(chunks)
             save_vector_store()
 
-        return {"status": "success", "message": "Files processed."}
+        return {
+            "status": "success",
+            "processed_files": len(files),
+            "new_chunks": len(all_chunks)
+        }
 
     except Exception as e:
         print(f"Upload error: {str(e)}")
-        return {"status": "error", "message": f"Upload failed: {str(e)}"}
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
