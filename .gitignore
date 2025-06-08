@@ -15,8 +15,7 @@ venv/
 # FAISS vector store files
 vector_store/
 
-# Streamlit
-.streamlit/config.toml
+
 
 # VS Code / IDEs
 .vscode/
