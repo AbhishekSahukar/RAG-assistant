@@ -19,4 +19,4 @@ services:
       - key: PORT
         value: 8501
       - key: API_URL
-        value: https://rag-backend.onrender.com  # 🔗 Replace with your actual backend URL after first deploy
+        value: https://rag-backend-8jq9.onrender.com  # 🔗 Replace with your actual backend URL after first deploy
