@@ -10,12 +10,15 @@ load_dotenv()
 # === API URL fail-fast check ===
 API_URL = os.getenv("API_URL")
 if not API_URL:
-    raise RuntimeError("❌ API_URL environment variable is not set.")
+    raise RuntimeError(" API_URL environment variable is not set.")
+API_KEY = os.getenv("OPENROUTER_API_KEY")
+if not API_KEY:
+    raise ValueError(" OPENROUTER_API_KEY is not set!")
 
 # === Streamlit Config ===
-st.set_page_config("🧠 RAG Chatbot")
-st.title("📄 RAG Chatbot")
-st.caption("💬 Talk to Mistral with optional document retrieval.")
+st.set_page_config(" RAG Chatbot")
+st.title(" RAG Chatbot")
+st.caption("Talk to Mistral with optional document retrieval.")
 
 # === Session State ===
 if "chat_history" not in st.session_state:
@@ -24,28 +27,28 @@ if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
 
 # === Sidebar ===
-st.sidebar.header("⚙️ Controls")
+st.sidebar.header(" Controls")
 
 if st.sidebar.button("🧹 Clear Chat"):
     st.session_state.chat_history = []
     st.rerun()
 
-if st.sidebar.button("🗑️ Clear Documents"):
+if st.sidebar.button(" Clear Documents"):
     try:
         res = requests.post(f"{API_URL}/status/clear-documents")
         if res.status_code == 200:
             st.session_state.uploaded_files = []
-            st.success("✅ Documents cleared.")
+            st.success(" Documents cleared.")
             st.rerun()
         else:
-            st.error("⚠️ Failed to clear documents on backend.")
+            st.error(" Failed to clear documents on backend.")
     except Exception as e:
-        st.error(f"⚠️ Error clearing documents: {e}")
+        st.error(f" Error clearing documents: {e}")
 
 # === Chat History Display ===
 for entry in st.session_state.chat_history:
-    st.markdown(f"**🧑 You:** {entry['user']}")
-    st.markdown(f"**🤖 Assistant:** {entry['assistant']}")
+    st.markdown(f"** You:** {entry['user']}")
+    st.markdown(f"** Assistant:** {entry['assistant']}")
     if entry.get("used_rag"):
         with st.expander("📚 Source Chunks"):
             for chunk in entry.get("chunks", []):
@@ -64,13 +67,13 @@ if submitted and user_input:
 
         st.session_state.chat_history.append({
             "user": user_input,
-            "assistant": data.get("response", "⚠️ No reply."),
+            "assistant": data.get("response", " No reply."),
             "used_rag": data.get("used_rag", False),
             "chunks": data.get("retrieved_chunks", [])
         })
         st.rerun()
     except Exception as e:
-        st.error(f"⚠️ Error connecting to backend: {e}")
+        st.error(f" Error connecting to backend: {e}")
 
 # === Document Upload ===
 st.divider()

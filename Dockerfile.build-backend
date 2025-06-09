@@ -3,14 +3,17 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy backend code
-COPY backend/ /app
+# Copy source and startup script
+COPY backend /app/backend
+COPY backend/requirements.txt /app/requirements.txt
+COPY start-backend.sh /app/start-backend.sh
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Ensure script is executable
-RUN chmod +x start-backend.sh
+# Make start script executable
+RUN chmod +x /app/start-backend.sh
 
-# Run FastAPI
+EXPOSE 8000
+
 CMD ["./start-backend.sh"]
