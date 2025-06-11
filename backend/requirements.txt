@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-PyMuPDF
-faiss-cpu
-numpy
-tqdm
-scikit-learn
-requests
-python-dotenv

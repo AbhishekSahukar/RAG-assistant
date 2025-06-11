@@ -1,4 +1,3 @@
-# chat_router.py (Updated to show raw LLM error and retrieved chunks)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.llm import call_llm
@@ -13,19 +12,27 @@ chat_router = APIRouter()
 
 @chat_router.post("/")
 async def chat_endpoint(request: ChatRequest):
+    """Handles incoming chat request and optionally augments it with retrieved chunks."""
     message = request.message
 
     try:
+        # Step 1: Retrieve relevant document chunks (if any)
         retrieved_chunks = retrieve_chunks(message)
 
         if retrieved_chunks:
             context = "\n\n".join(retrieved_chunks)
-            prompt = f"Answer the question using only the information below:\n\n{context}\n\nQuestion: {message}\nAnswer:"
+            prompt = f"""Answer the question using only the information below:
+
+{context}
+
+Question: {message}
+Answer:"""
             used_rag = True
         else:
             prompt = message
             used_rag = False
 
+        # Step 2: Send to LLM
         response = call_llm(prompt)
 
         return {
@@ -33,6 +40,7 @@ async def chat_endpoint(request: ChatRequest):
             "retrieved_chunks": retrieved_chunks,
             "used_rag": used_rag
         }
+
     except Exception as e:
         return {
             "response": f"⚠️ Error: {str(e)}",

@@ -1,4 +1,3 @@
-# backend/status_router.py
 from fastapi import APIRouter
 from backend.document_store import chunks, hashes, index, save_vector_store
 import faiss
@@ -6,29 +5,42 @@ import os
 
 status_router = APIRouter()
 
-@status_router.get("/")
+@status_router.get("/", tags=["Status"])
 def status():
+    """
+    Returns status of vector store: whether documents are loaded and count.
+    """
     return {
         "status": "ok",
         "documents_loaded": len(chunks) > 0,
         "chunk_count": len(chunks)
     }
 
-@status_router.post("/clear-documents")
+@status_router.post("/clear-documents", tags=["Maintenance"])
 def clear_documents():
-    global chunks, hashes, index
+    """
+    Clears memory + disk state of vector store.
+    """
     chunks.clear()
     hashes.clear()
-    index = faiss.IndexFlatL2(384)  # Assuming embedding dim is 384
+    index = faiss.IndexFlatL2(384)  # Assuming all-MiniLM-L6-v2 = 384 dim
     save_vector_store()
-    return {"status": "success", "message": "Documents cleared."}
-    
-    # Optional: clean disk files too
-    try:
-        os.remove("vector_store/faiss_index.idx")
-        os.remove("vector_store/chunks.pkl")
-        os.remove("vector_store/hashes.pkl")
-    except FileNotFoundError:
-        pass
-    
-    return {"status": "cleared", "message": "Vector store and memory cleared."}
+
+    # Attempt to clean on-disk files
+    deleted = []
+    for path in [
+        "vector_store/faiss_index.idx",
+        "vector_store/chunks.pkl",
+        "vector_store/hashes.pkl"
+    ]:
+        try:
+            os.remove(path)
+            deleted.append(path)
+        except FileNotFoundError:
+            pass
+
+    return {
+        "status": "cleared",
+        "message": "Vector store and memory cleared.",
+        "files_deleted": deleted
+    }

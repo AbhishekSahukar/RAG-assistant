@@ -1,0 +1,15 @@
+# Backend
+fastapi
+uvicorn
+PyMuPDF
+faiss-cpu
+numpy
+tqdm
+scikit-learn
+requests
+python-dotenv
+sentence-transformers
+python-multipart
+
+# Frontend
+streamlit
