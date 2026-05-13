@@ -1,27 +1,33 @@
 FROM python:3.11-slim
 
-# Install supervisor for process management
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install only minimal required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Python dependencies before copying full source
-# (takes advantage of Docker layer caching)
+# Copy requirements first for layer caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source
+# Upgrade pip + install dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
 COPY . .
 
-# Pre-create the vector store directory so it persists across restarts
+# Create required folders
 RUN mkdir -p vector_store
 
-# Supervisor config is copied from the repo root
+# Copy supervisor config
 COPY supervisord.conf /etc/supervisor/conf.d/app.conf
 
-# Streamlit is the public-facing port
+# Expose Streamlit port
 EXPOSE 8501
 
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/app.conf"]
