@@ -94,45 +94,6 @@ Open [http://localhost:8501](http://localhost:8501).
 
 ---
 
-## Deploy to Render for free
-
-[Render](https://render.com) offers a free tier for Docker-based web services. Your app will be publicly accessible at a `*.onrender.com` URL — no credit card required.
-
-> **Note on the free tier:** containers spin down after 15 minutes of inactivity and take about 30 seconds to wake up on the next request. This is perfectly fine for a portfolio project.
-
-**Step 1 — Push your code to GitHub**
-
-Make sure `.env` is listed in `.gitignore` (it already is). Push your repo to GitHub.
-
-**Step 2 — Create a Render account**
-
-Sign up at [render.com](https://render.com) and connect your GitHub account.
-
-**Step 3 — Create a new Web Service**
-
-- Click **New → Web Service**
-- Select your repository
-- Set **Runtime** to `Docker`
-- Set **Port** to `8501`
-- Leave Build Command and Start Command blank — the `Dockerfile` handles everything
-
-**Step 4 — Add environment variables**
-
-In the Render dashboard under **Environment**, add:
-
-| Key | Value |
-|---|---|
-| `OPENROUTER_API_KEY` | Your OpenRouter key |
-| `API_URL` | `http://localhost:8000` |
-| `ENV` | `prod` |
-
-The `API_URL` is `http://localhost:8000` because both services run inside the same container. The FastAPI backend is not publicly exposed — only the Streamlit frontend (port 8501) is.
-
-**Step 5 — Deploy**
-
-Click **Save and Deploy**. Render will build the image and give you a live URL.
-
----
 
 ## Project structure
 
