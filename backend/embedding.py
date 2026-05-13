@@ -2,16 +2,32 @@ import numpy as np
 from typing import List
 from sentence_transformers import SentenceTransformer
 
-# Loaded once at startup to avoid repeated disk reads
-_model = SentenceTransformer("all-MiniLM-L6-v2")
+_model = None
+
+
+def get_model():
+    global _model
+
+    if _model is None:
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    return _model
 
 
 def embed_chunks(chunks: List[str]) -> np.ndarray:
-    """Embed a list of text strings into dense vectors.
-
-    Returns an ndarray of shape (len(chunks), embedding_dim).
-    Returns an empty array if the input list is empty.
     """
+    Embed text chunks into dense vectors.
+    """
+
     if not chunks:
-        return np.empty((0, _model.get_sentence_embedding_dimension()), dtype="float32")
-    return np.array(_model.encode(chunks, convert_to_numpy=True), dtype="float32")
+        dim = get_model().get_sentence_embedding_dimension()
+        return np.empty((0, dim), dtype="float32")
+
+    embeddings = get_model().encode(
+        chunks,
+        convert_to_numpy=True,
+        batch_size=8,
+        show_progress_bar=False,
+    )
+
+    return np.array(embeddings, dtype="float32")
