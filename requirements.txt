@@ -1,11 +1,9 @@
 # Backend
 fastapi
-uvicorn
+uvicorn[standard]
 PyMuPDF
 faiss-cpu
 numpy
-tqdm
-scikit-learn
 requests
 python-dotenv
 sentence-transformers

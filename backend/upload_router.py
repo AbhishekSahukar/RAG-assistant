@@ -1,68 +1,53 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from typing import List
 import hashlib
-import fitz  # PyMuPDF
+from typing import List
 
-from backend.document_store import chunks, hashes, index, save_vector_store
+from fastapi import APIRouter, File, HTTPException, UploadFile
+
+import backend.document_store as ds
 from backend.retriever import create_faiss_index
-from backend.llm import clean_text_chunks
+from backend.text_utils import extract_text_from_pdf, split_into_chunks
 
 upload_router = APIRouter()
 
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """
-    Extracts plain text from a PDF byte stream using PyMuPDF.
-    """
-    doc = fitz.open(stream=file_bytes, filetype="pdf")
-    return "\n".join(page.get_text("text") for page in doc)
-
-
-@upload_router.post("/", tags=["Upload"])
+@upload_router.post("/")
 async def upload(files: List[UploadFile] = File(...)):
-    """
-    Uploads and processes documents (PDF or TXT), chunks and indexes them.
-    """
-    try:
-        all_chunks = []
-        processed_files = 0
-        skipped_files = 0
+    """Upload one or more PDF or TXT files. Extracts text, splits into chunks,
+    embeds them, and updates the FAISS index."""
+    new_chunks: List[str] = []
+    processed = 0
+    skipped = 0
 
+    try:
         for file in files:
             content = await file.read()
             file_hash = hashlib.md5(content).hexdigest()
 
-            if file_hash in hashes:
-                skipped_files += 1
-                continue  # Skip duplicate file
+            if file_hash in ds.hashes:
+                skipped += 1
+                continue
 
-            # Extract text
             if file.filename.lower().endswith(".pdf"):
                 text = extract_text_from_pdf(content)
             else:
                 text = content.decode("utf-8", errors="ignore")
 
-            # Clean + chunk
-            file_chunks = clean_text_chunks(text)
+            chunks = split_into_chunks(text)
+            ds.chunks.extend(chunks)
+            ds.hashes.add(file_hash)
+            new_chunks.extend(chunks)
+            processed += 1
 
-            # Append to in-memory store
-            chunks.extend(file_chunks)
-            hashes.add(file_hash)
-            all_chunks.extend(file_chunks)
-            processed_files += 1
-
-        # Update FAISS index and persist state
-        if all_chunks:
-            create_faiss_index(chunks)
-            save_vector_store()
+        if new_chunks:
+            create_faiss_index(ds.chunks)
+            ds.save_vector_store()
 
         return {
             "status": "success",
-            "processed_files": processed_files,
-            "skipped_duplicates": skipped_files,
-            "new_chunks": len(all_chunks)
+            "processed_files": processed,
+            "skipped_duplicates": skipped,
+            "new_chunks": len(new_chunks),
         }
 
     except Exception as e:
-        print(f"[ERROR] Upload failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {e}")

@@ -1,30 +1,27 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
+
+# Install supervisor for process management
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install system dependencies for PyMuPDF and faiss
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python dependencies before copying full source
+# (takes advantage of Docker layer caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
-COPY backend /app/backend
-COPY frontend /app/frontend
-COPY requirements.txt /app/requirements.txt
-COPY start.sh /app/start.sh
+# Copy application source
+COPY . .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Pre-create the vector store directory so it persists across restarts
+RUN mkdir -p vector_store
 
-# Make start script executable
-RUN chmod +x /app/start.sh
+# Supervisor config is copied from the repo root
+COPY supervisord.conf /etc/supervisor/conf.d/app.conf
 
-# Expose backend and frontend ports
-EXPOSE 8000
+# Streamlit is the public-facing port
 EXPOSE 8501
 
-# Start both backend and frontend
-CMD ["sh", "/app/start.sh"]
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/app.conf"]

@@ -1,50 +1,36 @@
-name:  Build and Deploy RAG Assistant
+name: Build and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
-    env:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-
     steps:
-      - name:  Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name:  Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name:  Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name:  DockerHub Login (if secrets exist)
-        run: |
-          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-          else
-            echo "🚫 DockerHub credentials not set. Skipping login."
-          fi
-
-      - name:  Build Docker image
+      - name: Build Docker image
         run: docker build -t rag-assistant .
 
-      - name:  Push Docker image (optional)
-        run: |
-          if [ -n "$DOCKERHUB_USERNAME" ]; then
-            docker tag rag-assistant "$DOCKERHUB_USERNAME/rag-assistant:latest"
-            docker push "$DOCKERHUB_USERNAME/rag-assistant:latest"
-          else
-            echo " Skipping push. No username set."
-          fi
+      - name: Log in to Docker Hub (if credentials are set)
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name:  Done
-        run: echo " CI/CD pipeline completed successfully!"
+      - name: Push to Docker Hub (if credentials are set)
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
+        run: |
+          docker tag rag-assistant "${{ secrets.DOCKERHUB_USERNAME }}/rag-assistant:latest"
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}/rag-assistant:latest"
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
