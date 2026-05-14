@@ -1,12 +1,25 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from backend.chat_router import chat_router
 from backend.upload_router import upload_router
 from backend.status_router import status_router
-from fastapi import Response
 
-app = FastAPI(title="RAG Assistant API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-load the embedding model before the first request arrives.
+    # Without this the first upload would block for several seconds while
+    # the model is read from disk and initialised.
+    from backend.embedding import warmup
+    warmup()
+    yield
+
+
+app = FastAPI(title="RAG Assistant API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

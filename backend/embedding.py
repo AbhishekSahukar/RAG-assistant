@@ -14,6 +14,12 @@ def get_model() -> TextEmbedding:
     return _model
 
 
+def warmup() -> None:
+    """Pre-load the model into memory at startup so the first upload request
+    is not slow. Called from the FastAPI startup event."""
+    get_model()
+
+
 def embed_chunks(chunks: List[str]) -> np.ndarray:
     """Embed a list of text strings into dense vectors.
 

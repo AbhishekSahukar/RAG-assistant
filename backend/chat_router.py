@@ -23,7 +23,9 @@ async def chat(request: ChatRequest):
         if retrieved_chunks:
             context = "\n\n".join(retrieved_chunks)
             prompt = (
-                f"Answer the question using only the information provided below.\n\n"
+                f"You are a helpful assistant. Answer the question below using the "
+                f"context provided. If the context covers the answer partially, use "
+                f"what is available and say so. Do not make up information.\n\n"
                 f"Context:\n{context}\n\n"
                 f"Question: {message}\n"
                 f"Answer:"
