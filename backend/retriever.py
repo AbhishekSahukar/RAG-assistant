@@ -14,10 +14,16 @@ def create_faiss_index(text_chunks: List[str]) -> None:
     ds.set_index(new_index)
 
 
-def retrieve_chunks(query: str, k: int = 3) -> List[str]:
-    """Return the top-k most relevant chunks for a query. Returns [] if no index exists."""
+def retrieve_chunks(query: str, k: int = 5) -> List[str]:
+    """Return the top-k most relevant chunks for a query. Returns [] if no index exists.
+
+    k=5 instead of 3 to capture facts that may be spread across the document.
+    """
     if ds.index is None or len(ds.chunks) == 0:
         return []
+
+    # Never request more chunks than we have
+    k = min(k, len(ds.chunks))
 
     query_vector = embed_chunks([query]).astype("float32")
     _, indices = ds.index.search(query_vector, k)
