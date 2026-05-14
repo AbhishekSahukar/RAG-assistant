@@ -1,33 +1,26 @@
 import numpy as np
 from typing import List
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 _model = None
 
+EMBEDDING_DIM = 384  # all-MiniLM-L6-v2 output dimension
 
-def get_model():
+
+def get_model() -> TextEmbedding:
     global _model
-
     if _model is None:
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-
+        _model = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
     return _model
 
 
 def embed_chunks(chunks: List[str]) -> np.ndarray:
-    """
-    Embed text chunks into dense vectors.
-    """
+    """Embed a list of text strings into dense vectors.
 
+    Returns an ndarray of shape (len(chunks), 384).
+    Returns an empty array if the input list is empty.
+    """
     if not chunks:
-        dim = get_model().get_sentence_embedding_dimension()
-        return np.empty((0, dim), dtype="float32")
-
-    embeddings = get_model().encode(
-        chunks,
-        convert_to_numpy=True,
-        batch_size=8,
-        show_progress_bar=False,
-    )
-
+        return np.empty((0, EMBEDDING_DIM), dtype="float32")
+    embeddings = list(get_model().embed(chunks))
     return np.array(embeddings, dtype="float32")
